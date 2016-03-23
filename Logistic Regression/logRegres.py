@@ -94,6 +94,61 @@ def stocGradAscent1(dataMatrix, classLabels, numIter=150):
 	for j in range(numIter):
 		dataIndex = range(m)
 		for i in range(m):
-			alpha = 1/(1.0+j+i)+0.01   # alpha 每次迭代时需要调整（即收敛速度先快后慢）
-			randIndex = int(random.uniform(0,len(dataIndex)))
+			# 常数项 0.01 是为了保证在多次迭代后，进来的新数据任然具有一定的影响力
+			# 若要处理的问题是动态变化的，可以适当加大常数项
+			# j << max(i) 时，alpha就不是严格下降的
+			alpha = 4/(1.0+j+i)+0.01   # alpha 每次迭代时需要调整（即收敛速度先快后慢）### 会缓解数据波动或高频波动
+			randIndex = int(random.uniform(0,len(dataIndex)))  # 随机选取更新（可以减少周期性的波动）
+			h = sigmoid(sum(dataMatrix[randIndex]*weigths))
+			error = classLabels[randIndex] - h
+			weigths = weigths + alpha * error * dataMatrix[randIndex]
+			del(dataMatrix[randIndex]) # 每次随机选取数据，故此处需将选取过的数据进行删除
+	return weigths
+
+####################################
+#    Algorithm Testing
+####################################
+def classifyVector(inX, weigths):
+	prob = sigmoid(sum(imX * weigths))
+	if prob > 0.5:
+		return 1.0
+	else:
+		return 0.0
+
+def colicTest():
+	trainingSet = []
+	trainingLabels = []
+	with open('horseColictraining.txt') as frTrain:
+		for line in frTrain.readlines():
+			currLine = line.strip().split('\t')
+			lineArr = []
+			for i in range(21):
+				lineArr.append(float(currLine[i]))
+			trainingSet.append(lineArr)
+			trainingLabels.append(float(currLine[21]))
+		trainWeigths = stocGradAscent1(np.array(trainingSet), trainingLabels, 500)
+	
+	errorCount = 0
+	numTestVec = 0.0
+	with open('horseColicTest.txt') as frTest:
+		for line in frTest.readlines():
+			numTestVec += 1.0
+			currLine = line.strip().split('\t')
+			lineArr = []
+			for i in range(21):
+				lineArr.append(float(currLine[i]))
+			if int(classifyVector(np.array(lineArr), trainWeigths)) != int(currLine[21]):
+				errorCount += 1
+	errorRate = (float(errorCount)/numTestVec)
+	print "the error rate of this test is: %f" % errorRate
+	return errorRate
+
+def multiTest():
+	numTests = 10
+	errorSum = 0.0
+	for k in range(numTests):
+		errorSum += colicTest()
+	print "after %d iterations the average error rate is: %f" % (numTests, errorSum/float(numTests))
+
+
 
