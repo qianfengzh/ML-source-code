@@ -1,5 +1,9 @@
 #coding=utf-8
-
+"""
+Named:   SVM
+Created: 2016/03/25
+@Author: Qian Feng
+"""
 
 import numpy as np
 import random
@@ -65,7 +69,7 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):   # C 是惩罚系数�
 					continue
 
 				eta = 2.0 * dataMatrix[i,:] * dataMatrix[j,:].T - dataMatrix[i,:] * dataMatrix[i,:].T - dataMatrix[j,:] * dataMatrix[j,:].T   # eta = -2*(Xi-Xj)^2   eta 是 alpha[j]的最佳修改量
-				if eta >= 0:
+				if eta >= 0:   # 因为通常情况下目标函数是正定的，也就是说，能够在直线约束方向上求得最小值，并且eta > 0
 					print "eta >= 0"
 					continue
 
