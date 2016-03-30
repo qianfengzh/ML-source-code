@@ -130,3 +130,34 @@ NOTE:½øÐÐÑµÁ·ºÍ²âÊÔµÄÊý¾Ý¼¯¶¼±ØÐë½øÐÐ¹éÒ»»¯£¬·ñÔòÓÐ½Ï´ó²îÖµµÄÌØÕ÷½«»á¶Ô²âÊÔ½á¹ûÓ
 
 
 
+
+
+
+
+
+
+
+
+*** Êý¾ÝÍÚ¾òÖÐµÄÆäËû¹¤¾ß ***
+PCA(Principal Component Analysis)£º°´ÕÕÊý¾Ý·½²î×î´ó·½Ïòµ÷ÕûÊý¾ÝµÄÖ÷³É·Ö·ÖÎö½µÎ¬£¨dimensionality reduction£©£»
+SVD£ºÒ»ÖÖ¾ØÕó·Ö½â¼¼Êõ£¬Í¨¹ý¶ÔÔ­Ê¼Êý¾ÝµÄ±Æ½üÀ´´ïµ½½µÎ¬Ä¿µÄ£»
+
+½µÎ¬¼¼ÊõµÄÔ­Òò£º
+1¡¢Ê¹µÃÊý¾Ý¼¯¸üÒ×Ê¹ÓÃ£»
+2¡¢½µµÍºÜ¶àËã·¨µÄ¼ÆËã¿ªÏú£»
+3¡¢È¥³ýÔëÉù£»
+4¡¢Ê¹µÃ½á¹ûÒ×¶®¡£
+
+½µÎ¬¼¼Êõ£ºPCA¡¢Òò×Ó·ÖÎö(Factor Analysis)¡¢¶ÀÁ¢³É·Ö·ÖÎö(Independent Component Analysis)
+
+## PCA ##
+Êý¾Ý´ÓÔ­À´µÄ×ø±êÏµ×ª»»µ½ÁËÐÂµÄ×ø±êÏµ¡£
+    µÚÒ»¸öÐÂ×ø±êÖáÑ¡ÔñµÄÊÇÔ­Ê¼Êý¾ÝÖÐ·½²î×î´óµÄ·½Ïò£»µÚ¶þ¸öÐÂ×ø±êÖáµÄÑ¡ÔñºÍµÚÒ»¸ö×ø±êÖáÕý½»ÇÒ¾ßÓÐ×î´ó·½²îµÄ·½Ïò¡£
+¸Ã¹ý³ÌÒ»Ö±ÖØ¸´£¬ÖØ¸´´ÎÊýÎªÔ­Ê¼Êý¾ÝÖÐÌØÕ÷µÄÊýÄ¿¡£»á·¢ÏÖ´ó²¿·Ö·½²î¶¼°üº¬ÔÚ×îÇ°Ãæ¼¸¸öÐÂ×ø±êÖáÖÐ£¬¹Ê¿ÉºöÂÔÓàÏÂµÄ×ø±êÖá¡£
+
+ÓÅµã£º½µµÍÊý¾ÝµÄ¸´ÔÓÐÔ£¬Ê¶±ð×îÖØÒªµÄÌØÕ÷¡£
+È±µã£º²»Ò»¶¨ÐèÒª£¬ÇÒ¿ÉÄÜËðÊ§ÓÐÓÃµÄÐÅÏ¢¡£
+ÊÊÓÃÊý¾ÝÀàÐÍ£ºÊýÖµÐÍ¡£
+
+
+
