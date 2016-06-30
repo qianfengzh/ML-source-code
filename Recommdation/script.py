@@ -13,41 +13,41 @@ import math
 
 # 1）评分
 def RMSE(records):
-  """
-  均方根误差测算预测准确度
-  param:
-    rui->用户u对物品i的实际评分
-    pui->预测用户u对物品i的结果
-  有平方项，相比MAE对评测更加苛刻，对错误惩罚更大
-  """
-  return math.sqrt(sum([(rui-pui)*(rui-pui) for u,i,rui,pui in records]) / float(len(records)))
+    """
+    均方根误差测算预测准确度
+    param:
+      rui->用户u对物品i的实际评分
+      pui->预测用户u对物品i的结果
+    有平方项，相比MAE对评测更加苛刻，对错误惩罚更大
+    """
+    return math.sqrt(sum([(rui-pui)*(rui-pui) for u,i,rui,pui in records]) / float(len(records)))
 
 def MAE(records):
-  """
-  绝对值误差测算预测准确度
-  param:
-    rui->用户u对物品i的实际评分
-    pui->预测用户u对物品i的结果
-  """
-  reture sum([abs(rui-pui) for u,i,rui,pui in records]) / fload(len(records))
+    """
+    绝对值误差测算预测准确度
+    param:
+      rui->用户u对物品i的实际评分
+      pui->预测用户u对物品i的结果
+    """
+    reture sum([abs(rui-pui) for u,i,rui,pui in records]) / fload(len(records))
 
 
 # 2）topN
 # topN 一般通过 precision 和 recall 来度量
 def PrecisionRecall(test, N):
-  """
-  test 位用户行为与结果字典，N为推荐列表长度
-  一般会选不同的推荐列表长度，求出一组 recall 和 precision 画 precision/recall curve
-  """
-  hit = 0
-  n_recall = 0
-  n_precision = 0
-  for user,items in test.items():
-    rank = Recommend(user, N)
-    hit += len(rank & items)
-    n_recall += len(items)
-    n_precision += N
-  return [hit / (1.0 * n_recall), hit / (1.0 * n_precision)]
+    """
+    test 位用户行为与结果字典，N为推荐列表长度
+    一般会选不同的推荐列表长度，求出一组 recall 和 precision 画 precision/recall curve
+    """
+    hit = 0
+    n_recall = 0
+    n_precision = 0
+    for user,items in test.items():
+        rank = Recommend(user, N)
+        hit += len(rank & items)
+        n_recall += len(items)
+        n_precision += N
+    return [hit / (1.0 * n_recall), hit / (1.0 * n_precision)]
 
 
 # 3、覆盖率(coverage)
@@ -55,15 +55,15 @@ def PrecisionRecall(test, N):
 覆盖率的两个著名度量指标：信息熵、Gini指数
 """
 def GiniIndex(p):
-  """
-  给定物品流行度分布p(item,weight)，计算基尼指数
-  """
-  j = 1
-  n = len(p)
-  G = 0
-  for item, weight in sorted(p.items(), key=itemgetter(1)):
-    G += (2 * j - n - 1) * weight
-  return G / float(n-1)
+    """
+    给定物品流行度分布p(item,weight)，计算基尼指数
+    """
+    j = 1
+    n = len(p)
+    G = 0
+    for item, weight in sorted(p.items(), key=itemgetter(1)):
+        G += (2 * j - n - 1) * weight
+    return G / float(n-1)
 
 # 4、多样性，使用同一推荐列表中物品的向异性来度量
 #   排列组合注意去重！
@@ -96,89 +96,145 @@ def GiniIndex(p):
 #------------------------
 import random
 def SplitData(data, M, k, seed):
-  """
-  将数据data 切分为 M 个部分，k为每次试验选取不同测试集和训练集
-  """
-  test = []
-  train = []
-  random.seed(seed)
-  for user, item in data:
-    if random.randint(0,M) == k:
-      test.append([user,item])
-    else:
-      train.append([user,item])
-  return train, test
+    """
+    将数据data 切分为 M 个部分，k为每次试验选取不同测试集和训练集
+    """
+    test = []
+    train = []
+    random.seed(seed)
+    for user, item in data:
+        if random.randint(0,M) == k:
+            test.append([user,item])
+        else:
+            train.append([user,item])
+    return train, test
 
 
 def Recall(train, test, N):
-  """
-  Evaluation: by recall rate
-  """
-  hit = 0
-  all = 0
-  for user in train.keys():
-    tu = test[user]
-    rank = GetRecommendation(user, N)
-    for item, pui in rank:
-      if item in tu:
-        hit += 1
-    all += len(tu)
-  return hit / (all * 1.0)
+    """
+    Evaluation: by recall rate
+    """
+    hit = 0
+    all = 0
+    for user in train.keys():
+        tu = test[user]
+        rank = GetRecommendation(user, N)
+        for item, pui in rank:
+            if item in tu:
+                hit += 1
+        all += len(tu)
+    return hit / (all * 1.0)
 
 
 def Precision(train, test, N):
-  """
-  Evaluation: by precision rate
-  """
-  hit = 0
-  all = 0
-  for user in train.keys():
-    tu = test[user]
-    rank = GetRecommendation(user, N)
-    for item, pui in rank:
-      if item in tu:
-        hit += 1
-    all += N
-  return hit / (all * 1.0)
+    """
+    Evaluation: by precision rate
+    """
+    hit = 0
+    all = 0
+    for user in train.keys():
+        tu = test[user]
+        rank = GetRecommendation(user, N)
+        for item, pui in rank:
+            if item in tu:
+                hit += 1
+        all += N
+    return hit / (all * 1.0)
 
 
 def Coverage(train, test, N):
-  """
-  Evaluation: by coverage
-  """
-  recommend_items = set()
-  all_items = set()
-  for user in train.keys():
-    for item in train[user].keys():
-      all_items.add(item)
-    rank = GetRecommendation(user, N)
-    for item, pui in rank:
-      recommend_items.add(item)
-  return len(recommend_items) / float(all_items)
+    """
+    Evaluation: by coverage
+    """
+    recommend_items = set()
+    all_items = set()
+    for user in train.keys():
+        for item in train[user].keys():
+            all_items.add(item)
+        rank = GetRecommendation(user, N)
+        for item, pui in rank:
+            recommend_items.add(item)
+    return len(recommend_items) / float(all_items)
 
 
 def Popularity(train, test, N):
-  """
-  Evaluation: by popularity
-  利用所有推荐出物品的平均流行度来评测 算法的新颖性
-  """
-  item_popularity = dict()
-  for user, items in train.items():
-    for item in items.keys():
-      if item not in item_popularity:
-        item_popularity[item] = 0
-      item_popularity[item] += 1
-  ret = 0
-  n = 0
-  for user in train.keys():
-    rank = GetRecommendation(user, N)
-    for item, pui in rank:
-      ret += math.log(1 + item_popularity[item])
-      n += 1
-  ret /= float(n)
-  return ret
+    """
+    Evaluation: by popularity
+    利用所有推荐出物品的平均流行度来评测 算法的新颖性
+
+    在计算平均流行度时对每个物品的流行度取对数，这是因为物品的流行度分布满足长
+    尾分布，在取对数后，流行度的平均值更加稳定
+    """
+    item_popularity = dict()
+    for user, items in train.items():
+        for item in items.keys():
+            if item not in item_popularity:
+                item_popularity[item] = 0
+            item_popularity[item] += 1
+    ret = 0
+    n = 0
+    for user in train.keys():
+        rank = GetRecommendation(user, N)
+        for item, pui in rank:
+            ret += math.log(1 + item_popularity[item])
+            n += 1
+    ret /= float(n)
+    return ret
 
 
 
+def UserSimilarity0(train):
+    """
+    利用余弦相似度 实现 用户见相似度度量
+    """
+    W = dict()
+    for u in train.keys():
+        for v in train.keys():
+            if u == v:
+                continue
+            W[u][v] = len(train[u] & train[v])
+            W[u][v] /= math.sqrt(len(train[u]) * len(train[v]) * 1.0)
+    return W
 
 
+def UserSimilarity1(train):
+    # 建立物品到用户的倒排表
+    item_users = dict()
+    for u, items in train.items():
+        for i in item.keys():
+            if i not in item_users: # 倒排表初始化
+                item_users[i] = set()
+            item_users[i].add(u) # 理论上（此处只查看用户是否对物品有操作，并非要去汇总用户对物品的操作数）
+
+
+    C = dict()
+    N = dict()
+    for i, users in item_users.items():
+        for u in users:
+            N[u] += 1
+            for v in users:
+                if u == v:
+                    continue
+                C[u][v] += 1
+
+    # 计算最终的相似矩阵
+    W = dict()
+    for u, related_users in C.items():
+        for v, cuv in related_users.items():
+            W[u][v] = cuv / math.sqrt(N[u] * N[v])
+    return W
+
+
+
+def Recommend(user, train, W):
+    """
+    u v 的相似度矩阵，与 用户v 的兴趣物品之积，求和
+    """
+    rank = dict()
+    interacted_items = train[user]
+    for v, wuv in sorted(W[u].items, key=itemgetter(1), reverse=True)[0:K]:
+        for i, rvi in train[v].items:
+            if i in interacted_items:
+                continue
+            rank[i] += wuv * rvi
+    return rank
