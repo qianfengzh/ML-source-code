@@ -182,7 +182,9 @@ def Popularity(train, test, N):
     return ret
 
 
-
+#---------------
+# USER-CF
+#---------------
 def UserSimilarity0(train):
     """
     利用余弦相似度 实现 用户见相似度度量
@@ -234,7 +236,123 @@ def Recommend(user, train, W):
     interacted_items = train[user]
     for v, wuv in sorted(W[u].items, key=itemgetter(1), reverse=True)[0:K]:
         for i, rvi in train[v].items:
-            if i in interacted_items:
+            if i in interacted_items: # 将用户行为过的物品进行滤除，只推荐用户没有见过的
                 continue
             rank[i] += wuv * rvi
     return rank
+
+
+def UserSimilarity2(train):
+    """
+    基于原有Jaccaard 系数计算相似度的改进
+    对不同用户共同兴趣列表中的热门商品做了惩罚，以减少对相似度的影响
+    """
+    # build inverse table for item_users
+    item_users = dict()
+    for u, items in train.items():
+        for i in items.keys():
+            if i not in item_uses:
+                item_users[i] = set()
+            item_users[i].add(u)
+
+    # calculate co_rated items between users
+    C = dict()
+    N = dict()
+    for i,users in item_users.items():
+        for u in users:
+            N[u] += 1
+            for v in users:
+                if v == u:
+                    continue
+                C[u][v] += 1/math.log(1 + len(users)) # 使用 除法，将热门商品的影响与冷门商品的影响拉平
+
+    # caculate finial similarity matrix W
+    W = dict()
+    for u, related_users in C.items():
+        for v, cuv in related_users.items():
+            W[u][v] = cuv / math.sqrt(len(N[u]) * len(N[v]))
+    return W # 用户相似度矩阵
+
+
+
+
+#--------------
+# ITEM-CF
+#--------------
+
+def ItemSimilarity0(train):
+    """
+    同USER-CF一样，形成物品倒排表，计算物品相似度
+    """
+    # caculate co-rated users between items
+    C = dict()
+    N = dict()
+    for u, itmes in train.items():
+        for i in items:
+            N[i] += 1
+            for j in items:
+                if i == j:
+                    continue
+                C[i][j] += 1
+    # clculate finial similarity matrix W
+    W = dict()
+    for i, related_items in C.items():
+        for j, cij in related_items:
+            W[i][j] = cij / math.sqrt(N[i] * N[j])
+    return W # 返回商品相似度矩阵
+
+
+def RecommendationItem-CF(train, user_id, W, K):
+    """
+    基于物品的协同过滤推荐
+    """
+    rank = dict()
+    ru = train(user_id)
+    for i, pi in ru.items(): # 对需要推荐用户的有操作历史的所有物品，找出 K 个最相似的物品
+        for j, wj in sorted(W[i].items(), key=itemgetter(1), reverse=True)[0:K]:
+            if j in ru:
+                continue
+            rank[j] += pi * wj # wj 为物品i、j 之间的相似度值，pi为用户对物品 i 的历史兴趣度
+    return rank
+
+def RecommendationItem-CF(train, user_id, W, K):
+    """
+    基于物品的推荐（携带解释）
+    """
+    rank = dict()
+    ru = train[user_id]
+    for i, pi in ru.items():
+        for j, wj in sorted(W[i].items(), key=itemgetter(1), reverse=True)[0:K]:
+            if j in ru:
+                continue
+            rank[j].weight += pi * wj
+            rank[j].reason[i] = pi * wj
+    return rank
+
+def ItemSimilarity1(train):
+    """
+    ItemCF-IUF
+    
+    基于原有相似度计算的改进，软性惩罚过于活跃用户的影响
+    """
+    # calculate co-rated uses between items
+    C = dict()
+    N = dict()
+    for u, items in train.items():
+        for i in items:
+            N[i] += 1
+            for j in items:
+                if i == j:
+                    continue
+                C[i][j] += 1 / math.log(1 + len(items) * 1.0)
+
+    # calculate finial similarity matrix W
+    W = dict()
+    for i, related_items in C.items():
+        for j, cij in related_items.items():
+            W[i][j] = cij / math.sqrt(N[i] * N[j])
+    return W
+
+
+
+
