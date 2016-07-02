@@ -34,3 +34,55 @@ def pca(dataMat, topNfeat=9999999):
 	lowDDatMat = meanRemoved * redEigVects
 	reconMat = (lowDDatMat * redEigVects.T) + meanVals
 	return lowDDatMat, reconMat
+
+
+
+
+
+def PCA_for_tianchi(dataFrame, topNfeat):
+	import numpy as np
+	import pandas as pd
+	operate_dataFrame = dataFrame.drop(['date','item_id','store_code','cate_id','cate_level_id','brand_id','supplier_id'], axis=1)
+	meanVals = operate_dataFrame.mean(axis=0)
+	meanRemoved = operate_dataFrame-meanVals
+	covDataFrame = meanRemoved.cov()
+	covMat = np.mat(covDataFrame.value)
+	eigVals, eigVects = np.linalg.eig(covMat)
+	eigValInd = np.argsort(eigVals)
+	eigValInd = eigValInd[:-(topNfeat):-1]
+	redEigVects = eigVects[:,eigValInd]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+operate_dataFrame = dataFrame.drop(['date','item_id','store_code','cate_id','cate_level_id','brand_id','supplier_id'], axis=1)
+meanVals = operate_dataFrame.mean(axis=0)
+meanRemoved = operate_dataFrame-meanVals
+covDataFrame = meanRemoved.cov()
+covMat = np.mat(covDataFrame.value)
+eigVals, eigVects = np.linalg.eig(covMat)
+eigValInd = np.argsort(eigVals, reverse=True)
+eigSort = sorted(eigVals,reverse=True)
+fig=plt.Figure()
+plt.plot()
+
+
+
+
+
+
+
+
+
+item_store_feature_date = item_store_feature.

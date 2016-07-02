@@ -140,7 +140,7 @@ NOTE:½øÐÐÑµÁ·ºÍ²âÊÔµÄÊý¾Ý¼¯¶¼±ØÐë½øÐÐ¹éÒ»»¯£¬·ñÔòÓÐ½Ï´ó²îÖµµÄÌØÕ÷½«»á¶Ô²âÊÔ½á¹ûÓ
 
 *** Êý¾ÝÍÚ¾òÖÐµÄÆäËû¹¤¾ß ***
 PCA(Principal Component Analysis)£º°´ÕÕÊý¾Ý·½²î×î´ó·½Ïòµ÷ÕûÊý¾ÝµÄÖ÷³É·Ö·ÖÎö½µÎ¬£¨dimensionality reduction£©£»
-SVD£ºÒ»ÖÖ¾ØÕó·Ö½â¼¼Êõ£¬Í¨¹ý¶ÔÔ­Ê¼Êý¾ÝµÄ±Æ½üÀ´´ïµ½½µÎ¬Ä¿µÄ£»
+SVD(Singular Value Decomposition)£ºÒ»ÖÖ¾ØÕó·Ö½â¼¼Êõ£¬Í¨¹ý¶ÔÔ­Ê¼Êý¾ÝµÄ±Æ½üÀ´´ïµ½½µÎ¬Ä¿µÄ£»
 
 ½µÎ¬¼¼ÊõµÄÔ­Òò£º
 1¡¢Ê¹µÃÊý¾Ý¼¯¸üÒ×Ê¹ÓÃ£»
@@ -160,4 +160,13 @@ SVD£ºÒ»ÖÖ¾ØÕó·Ö½â¼¼Êõ£¬Í¨¹ý¶ÔÔ­Ê¼Êý¾ÝµÄ±Æ½üÀ´´ïµ½½µÎ¬Ä¿µÄ£»
 ÊÊÓÃÊý¾ÝÀàÐÍ£ºÊýÖµÐÍ¡£
 
 
+
+
+## SVD ##
+    SVDÊÇ¾ØÕó·Ö½âµÄÒ»ÖÖÀàÐÍ£¬¾ØÕó·Ö½âÊ±½«Êý¾Ý¾ØÕó·Ö½âÎª¶à¸ö¶ÀÁ¢²¿·ÖµÄ¹ý³Ì¡£
+
+ÓÅµã£º¼ò»¯Êý¾Ý£¬È¥³ýÔëÉù£¬Ìá¸ßËã·¨µÄ½á¹û£»
+È±µã£ºÊý¾ÝµÄ×ª»»¿ÉÄÜÄÑÒÔÀí½â£»
+ÊÊÓÃÊý¾ÝÀàÐÍ£ºÊýÖµÐÍ¡£
+    ÎÒÃÇ³ÆÀûÓÃSVDµÄ·½·¨ÎªÒþÐÔÓïÒåË÷Òý(Latent Semantic Indexing,LSI)»òÒþÐÔÓïÒå·ÖÎö(Latent Semantic Analysis,LSA)¡£
 

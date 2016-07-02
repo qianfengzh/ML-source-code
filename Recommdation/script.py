@@ -356,3 +356,70 @@ def ItemSimilarity1(train):
 
 
 
+#----------------------
+# LFM（隐语义模型）
+#----------------------
+def RandomSelectNegativeSample(self, items):
+    """
+    进行负样本采样：
+        原则：1>保证正负样本均衡
+              2>负样本采样，尽可能选热门且用户没有行为过的物品
+    """
+    ret = dict()
+    for i in items.keys():
+        ret[i] = 1
+    n = 0
+    for i in range(0, len(items) * 3): # 循环无意义，仅是为保证正负样本数量接近
+        item = items_pool[random.randint(0, len(items_pool) - 1)] # 在热门物品池中进行随机采样
+        if item in ret:
+            continue
+        ret[item] = 0
+        n += 1
+        if n > len(items): # 控制正负样本均衡
+            break
+    return ret
+
+def LatentFactorModel(user_items, F, N, alpha, lambda):
+    """
+    梯度下降法最小化损失函数，求解 p, q 参数
+    """
+    [P, Q] = InitModel(user_tiems, F)
+    for step in range(0, N):
+        for user, items in user_items.items():
+            samples = RandomSelectNegativeSample(items)
+            for item, rui in samples.items():
+                eui = rui - Predict(user, item)
+                for f in range(0, F):
+                    P[user][f] += alpha * (eui * Q[item][f] - lambda * P[user][f])
+                    Q[item][f] += alpha * (eui * P[user][f] - lambda * Q[item][f])
+        alpha *= 0.9
+
+def Recommend(user, P, Q):
+    rank = dict()
+    for f, puf in P[user].items():
+        for i, qfi in Q[f].items():
+            if i not in rank:
+                rank[i] += puf * qfi
+    return rank
+
+def PersionalRank(G, alpha, root):
+    """
+    基于图模型，使用随机游算法实现
+    G 为用户、物品的二分图模型
+    """
+    rank = dict()
+    rank = {x:0 for x in G.keys()}
+    rank[root] = 1
+    for k in range(20): # 迭代随机游走20次
+        tmp = {x:0 for x in G.keys()}
+        for i, ri in G.items():
+            for j, wij in ri.items():
+                if j not in tmp:
+                    tmp[j] = 0
+                tmp[j] += 0.6 * rank[i] / float(len(ri))
+                if j == root:
+                    tmp[j] += 1 - alpha
+        rank = tmp
+    return rank
+
+
