@@ -429,6 +429,8 @@ def PersionalRank(G, alpha, root):
 # 三、推荐系统冷启动问题
 # 用户冷启动、物品冷启动、系统冷启动
 #  
+#  UserCF对物品的冷启动不是很敏感。（可才用基于物品内容信息来解决）
+#
 #主要解决思路：
 #   1、非个性化的推荐
 #   2、利用用户注册信息的粗粒度个性化
@@ -444,4 +446,24 @@ def PersionalRank(G, alpha, root):
 #
 #   6、系统冷启动时，引入专家知识
 #------------------------
+#
+#5、利用物品内容信息，进行兴趣划分：
+#  将物品的信息进行分词，形成关键词和权重组成的词向量；
+#  计算此项量的余弦相似度，从而判断物品之间的相似度
+
+# 建立关键词——物品的倒排表，通过余弦相似度计算物品之间的相似度
+def CaculateSimilarity(entity-items):
+    w = dict()
+    ni = dict()
+    for e, items in entity-items.items():
+        for i, wie in items.items():
+            addToVec(ni, i, wie * wie)
+            for j, wje in items.items():
+                addToMat(w, i, j, wie, wje)
+    for i, relate_itmes in w.items():
+        relate_items = {x:y/math.sqrt(ni[i] * ni[x] for x,y in relate_items.items())}
+
+
+
+
 
