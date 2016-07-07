@@ -465,5 +465,106 @@ def CaculateSimilarity(entity-items):
 
 
 
+#------------------------
+# 四、利用用户标签数据
+# 
+# 主要考虑两个问题：1、如何利用用户打标签行为给用户推荐；2、如何给用户推荐标签
+#
+# 需要考虑的问题：1）热门标签和热门物品的影响；2）数据稀疏性（用户标签稀疏）；3）标签清理
+#
+# -----------------------
+# 1、标签系统中的推荐问题（用户为何标注？用户如何标注？用户打什么标签？）
+# 1）为何标注：传递信息，利己利人；
+# 2）标签的流行度也服从长尾分布；
+# 3）物品的特征、种类、所属折者，用户观点、相关标签（如我喜欢）、任务；
+
+# 基于用户标签的推荐
+def CosineSim(item_tags, i, j):
+    """
+    利用余弦相似度同过物品的标签向量计算物品的相似度
+    """
+    ret = 0
+    for b, wib in item_tags[i].items():
+        if b in item_tags[j]:
+            ret += wib * item_tags[j][b]
+    ni = 0
+    nj = 0
+    for b, w in item_tags[i].intems():
+        ni += w * w
+    for b, w in item_tags[j].items():
+        nj += w * w
+    if ret == 0:
+        return 0
+    return ret / math.sqrt(ni * nj)
+
+
+def Diversity(item_tags, recommend_items):
+    """
+    计算一个推荐列表的多样性
+    (值越大，越多样化)
+    整个推荐系统的多样性为所有用户推荐列表多样性的均值
+    """
+    ret = 0
+    n = 0
+    for i in recommend_items.keys():
+        for j in recommend_items.keys():
+            if i == j:
+                continue
+            ret += CosineSim(item_tags, i, j)
+            n += 1
+    return 1 - ret / (n * 1.0)
+
+
+def RecommendUGC(user):
+    """
+    一个简单的基于标签的推荐系统
+    找用户常用的标签，将有这些标签的热门的物品推荐给用户
+    """
+    recommend_items = dict()
+    tagged_items = user_items[user]
+    for tag, wut in user_tags[user].itmes():
+        for item, wti in tag_items[tag].items():
+            # if items have been tagged, do not recommend them
+            if item in tagged_items:
+                continue
+            if itme not in recommend_items:
+                recommend_items[item] = wut * wti
+            else:
+                recommend_items[item] += wut * wti
+    return recommend_items
+
+
+# 1>热门标签、热门物品问题（通过log函数衰减来处理）
+# 2>数据/标签的稀疏性问题（通过将相似的标签加入推荐系统中进行对用户推荐）
+# 3>标签清理问题（去除高频停止词；去除词根不同的同义词；去除分隔符不同的同义词）
+
+# ***
+# 给用户推荐标签
+# PopularTags、ItemPopularTags、UserPopularTags、HybridPopularTags(注意线性加权时的归一化问题)
+# 给用户推荐标签，同样也存在冷启动的问题，
+#       解决：1>物品内容中抽取关键词
+#             2>标签相似度解决（标签量过少）
+#
+def SplitDataTag(records, train, test):
+    """
+    基于标签的推荐，切分数据集
+    """
+    for user, item, tag in records:
+        if random.randint(1,10) == 1:
+            test.append([user,item,tag])
+        else:
+            train.append([user,item,tag])
+    return [train,test]
+
+
+
+
+
+
+
+
+
+
+
 
 
