@@ -9,6 +9,7 @@
 import numpy as np
 import operator
 import math
+import os
 def createDataSet():
 	group = np.array([[1.0,1.1],[1.0,1.0],[0,0],[0,0.1]])
 	labels = ['A','A','B','B']
@@ -71,5 +72,49 @@ def datingClassTest():
 		classifierResult = classify0(normMat[i,:], normMat[numTestVecs:m,:],datingLabels[numTestVecs:m],3)
 		if (classifierResult != datingLabels[i]): errorCount += 1.0
 	print 'the total accurace rate is: %f' % (1-errorCount / float(numTestVecs))
+
+#---------------------------------------------
+# knn实现手写识别系统
+def img2vector(filename):
+	"""
+	对单个文件进行转换
+	"""
+	returnVect = np.zeros((1,1024))
+	with open(filename) as fr:
+		for i in range(32):
+			lineStr = fr.readline()
+			for j in range(32):
+				returnVect[0,32*i+j] = int(lineStr[j])
+	return returnVect
+
+# 使用 knn 算法识别手写数字
+def handwritingClassTest(k=3):
+	hwLabels = []
+	trainingFileList = os.listdir('E:\\test\\trainingDigits')
+	m = len(trainingFileList)
+	trainingMat = np.zeros((m,1024))
+	for i in range(m):
+		fileName = trainingFileList[i]
+		fileStr = fileName.split('.')[0]
+		classNumStr = int(fileStr.split('_')[0])
+		hwLabels.append(classNumStr)
+		trainingMat[i,:] = img2vector('E:\\test\\trainingDigits\\%s' % fileName)
+	testFileList = os.listdir('E:\\test\\testDigits')
+	errorCount = 0.0
+	mTest = len(testFileList)
+	for i in range(mTest):
+		fileName = testFileList[i]
+		fileStr = fileName.split('.')[0]
+		classNumStr = int(fileStr.split('_')[0])
+		vectorUnderTest = img2vector('E:\\test\\testDigits\\%s' % fileName)
+		classifierResult = classify0(vectorUnderTest, trainingMat, hwLabels, k)
+		# print 'came back with: %d, the real answer is: %d' % (classifierResult,classNumStr)
+		if(classifierResult != classNumStr):
+			errorCount += 1.0
+	print "\nthe total number of errors is: %d" % errorCount
+	print 'The total accurace rate is: %f' % (1-errorCount/float(mTest))
+
+
+
 
 
