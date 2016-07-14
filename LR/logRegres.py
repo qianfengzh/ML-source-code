@@ -1,7 +1,7 @@
 #-*-coding=utf-8-*-
 
 #-----------------------
-# Named:	Decision Tree
+# Named:	Logistic Regression
 # Created:	2016-07-12
 # @Author:	Qianfeng
 #-----------------------
