@@ -58,6 +58,17 @@ def kMeans(dataSet, k, distMeas=disEclud, createCent=randCent):
 	return centroids, clusterAssment
 
 
-
+# 二分K-Means
+def biKmeans(dataSet, k, disMeas=disEclud):
+	m = np.shape(dataSet)[0]
+	clusterAssment = np.mat(np.zeros(m,2))
+	centroid0 = np.mean(dataSet, axis=0).tolist()[0]
+	centList = [centroid0]
+	for j in range(m): # 计算所有不点与族质心的距离
+		clusterAssment[j,1] = disMeas(np.mat(centroid0), dataSet[j,:])**2
+	while (len(centList) < k): # 为达到指定的族数 k
+		lowestSSE = np.inf
+		for i in range(len(centList)):
+			ptsInClust = dataSet[np.nonzero(clusterAssment[:,0].A==1)[0],:]
 
 
