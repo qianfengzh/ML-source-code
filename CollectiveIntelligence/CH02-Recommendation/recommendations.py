@@ -67,7 +67,7 @@ def sim_pearson(prefs, p1, p2):
 
     # 求平方和
     sum1Sq = sum([pow(prefs[p1][it],2) for it in si])
-    sum2Sq = sum([pow(prefs[p1][it],2) for it in si])
+    sum2Sq = sum([pow(prefs[p2][it],2) for it in si])
 
     # 求乘积之和
     pSum = sum([prefs[p1][it] * prefs[p2][it] for it in si])
@@ -85,7 +85,7 @@ def sim_pearson(prefs, p1, p2):
 # 从反映偏好的字典中返回最为匹配者
 #返回结果的个数和相似度函数均为可选参数
 def topMatches(prefs, person, n=5, similarity=sim_pearson):
-    scores = [(similarity(prefs, person, othre), other) for other in prefs if other != person]
+    scores = [(similarity(prefs, person, other), other) for other in prefs if other != person]
 
     # 对列表进行排序，评价最高者排在最前
     scores.sort(key=lambda x: x[0], reverse=True)
@@ -106,10 +106,12 @@ def getRecommendation(prefs, person, similarity=sim_pearson):
         if sim<=0:
             continue
         for item in prefs[other]:
+            # only score movies I haven't seen yet
             if item not in prefs[person] or prefs[person][item] == 0:
                 totals.setdefault(item,0)
                 totals[item] += prefs[other][item] * sim
                 simSums[item] = simSums.get(item, 0) + sim
+
         # 创建归一化列表
         rankings = [(total/simSums[item],item) for item,total in totals.items()]
 
@@ -128,5 +130,7 @@ def transformPrefs(prefs):
             result.setdefault(item,{})
             result[item][person] = prefs[person][item]
     return result
+
+
 
 
