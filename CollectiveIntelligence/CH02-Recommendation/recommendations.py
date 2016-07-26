@@ -55,7 +55,7 @@ def sim_pearson(prefs, p1, p2):
             si[item] = 1
 
     # 获取列表元素个数
-    n = len(si)
+    n = float(len(si))
 
     # 两者无共同处，返回1
     if n == 0:
@@ -81,6 +81,15 @@ def sim_pearson(prefs, p1, p2):
     r = num/den
     return r
 
+def sim_tanimoto(prefs, p1, p2):
+    p1Set = set(prefs[p1])
+    p2Set = set(prefs[p2])
+    intersectSet = p1Set.intersection(p2Set)
+    unionSet = p1Set.union(p2Set)
+    return len(intersectSet)/float(len(unionSet)-len(intersectSet)+1)
+
+
+
 # ---------------------------
 # 从反映偏好的字典中返回最为匹配者
 #返回结果的个数和相似度函数均为可选参数
@@ -94,7 +103,7 @@ def topMatches(prefs, person, n=5, similarity=sim_pearson):
 
 #----------------------------
 # 利用所有他人评价值的加权平均，为客户提供推荐
-def getRecommendation(prefs, person, similarity=sim_pearson):
+def getRecommendations(prefs, person, similarity=sim_pearson):
     totals = {}
     simSums = {}
     for other in prefs:
@@ -132,5 +141,98 @@ def transformPrefs(prefs):
     return result
 
 
+def calculateSimilarItems(prefs, n=10):
+    # 建立字典，以给出与这些物品最为相近的所有其他物品
+    result = {}
 
+    # 以物品为中心对偏好矩阵实施倒置处理
+    itemPrefs = transformPrefs(prefs)
+    c = 0
+    for item in itemPrefs:
+        # 针对大数据集更新状态变量
+        c += 1
+        if c%100 == 0:
+            print '%d / %d' % (c,len(itemPrefs))
+        # 寻找最相近的物品
+        scores = topMatches(itemPrefs, item, n=n, similarity=sim_distance)
+        result[item] = scores
+    return result
+
+def getRecommendedItems(prefs, itemMatch, user):
+    userRatings = prefs[user]
+    scores = {}
+    totalSim = {}
+
+    # 循环遍历由当前用户评分的物品
+    for (item, rating) in userRatings.items():
+
+        # 循环遍历与当前物品相近的物品
+        for (similarity, item2) in itemMatch[item]:
+            # 如果该用户已经对当前物品做过评价
+            if item2 in userRatings:
+                continue
+
+            # 评价值与相似度的加权之和
+            scores.setdefault(item2, 0)
+            scores[item2] += similarity * rating
+
+            # 全部相似度之和
+            # totalSim.setdefault(item2, 0)
+            # totalSim[item2] += similarity
+            totalSim[item2] = totalSim.get(item2,0) + similarity
+    
+    # 将每个合计值处理加权和，求出平均值
+    rankings = [(score/totalSim[item], item) for item,score in scores.items()]
+
+    # 按最高值到最低值的顺序，返回评分结果
+    rankings.sort(key=lambda x: x[0], reverse=True)
+    return rankings
+
+# 使用 MovieLens 数据集
+def loadMovieLens(path='D:\\tmp'):
+    # 获取影片标题
+    movies = {}
+    for line in open(path+'\\u.item'):
+        (id,title) = line.split('|')[0:2]
+        movies[id] = title
+
+    # 加载数据
+    prefs = {}
+    for line in open(path+'\\u.data'):
+        (user, movieid, rating, ts) = line.split('\t')
+        prefs.setdefault(user,{})
+        prefs[user][movies[movieid]] = float(rating)
+    return prefs
+
+
+# 基于用户过滤的改进
+def calculateSimilarUsers(prefs, n=5):
+    # 预先计算用户相似度
+    result = {}
+
+    c = 0
+    for user in prefs:
+        # 针对大数据集更新状态变量
+        c += 1
+        if c%100 == 0:
+            print '%d / %d' % (c,len(itemPrefs))
+        # 寻找最相近的物品
+        scores = topMatches(prefs, user, n=n, similarity=sim_pearson)
+        result[user] = scores
+    return result
+
+
+def getUserRecommendations(prefs, userMatch, user):
+    scores = {}
+    simTotal = {}
+
+    for (score,user) in userMatch[user].items():
+        for (item,rating) in prefs[user]:
+            scores.setdefault(item, 0)
+            scores[item] += score * rating
+
+            simTotal[item] += simTotal.get(item,0) + score
+    rankings = [(score/simTotal[item], item) for score,item in scores.items()]
+    rankings.sort(key=lambda x: x[0], reverse=True)
+    return rankings
 
