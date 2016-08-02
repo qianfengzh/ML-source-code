@@ -8,6 +8,7 @@
 
 import re
 import math
+from sqlite3 import dbapi2 as sqlite
 
 # 测试样例
 def sampletrain(c1):
@@ -38,34 +39,84 @@ class Classifier:
         self.cc = {}
         self.getFeatures = getFeatures
 
+    def setdb(self, dbfile):
+        self.con = sqlite.connect(dbfile)
+        self.con.execute('create table if not exists fc(feature, category, count)')
+        self.con.execute('create table if not exists cc(category, count)')
+
+    '''
     def incf(self, f, cat):
         # 增加对特征/分类组合的计数值(每个特征在每个分类中出现的计数值)
         self.fc.setdefault(f,{})
         self.fc[f][cat] = self.fc[f].get(cat,0) + 1
-
+    '''
+    def incf(self, f, cat):
+        count = self.fcount(f, cat)
+        if count == 0:
+            self.con.execute("insert into fc values('%s','%s',1)" % (f, cat))
+        else:
+            self.con.execute("update fc set count=%d where feature='%s' and category='%s'" % (count+1, f, cat))
+    
+    '''
     def incc(self, cat):
         # 增加对某一分类的计数值
         self.cc[cat] = self.cc.get(cat, 0) + 1
-
+    '''
+    def incc(self, cat):
+        count = self.catcount(cat)
+        if count == 0:
+            self.con.execute("insert into cc values ('%s',1)" % (cat))
+        else:
+            self.con.execute("update cc set count=%d where category='%s'" % (count+1, cat))
+    
+    '''
     def fcount(self, f, cat):
         # 某一特征出现于某一分类中的次数
         if f in self.fc and cat in self.fc[f]:
             return float(self.fc[f][cat])
         return 0.0
-
+    '''
+    def fcount(self, f, cat):
+        res = self.con.execute("select count from fc where feature='%s' and category='%s'" % (f, cat)).fetchone()
+        if res == None:
+            return 0
+        else:
+            return float(res[0])
+    
+    '''
     def catcount(self, cat):
         # 属于某一分类的内容项数量
         if cat in self.cc:
             return float(self.cc[cat])
         return 0
-
+    '''
+    def catcount(self, cat):
+        res = self.con.execute("select count from cc where category='%s'" % (cat)).fetchone()
+        if res == None:
+            return 0
+        else:
+            return float(res[0])
+    
+    '''
     def totalcount(self):
         # 所有内容项的数量
         return sum(self.cc.values())
-
+    '''
+    def totalcount(self):
+        res = self.con.execute("select sum(count) from cc").fetchone()
+        if res==None:
+            return 0
+        return res[0]
+    
+    '''
     def categories(self):
         # 所有分类的列表
         return self.cc.keys()
+    '''
+    def categories(self):
+        cur = self.con.execute("select category from cc")
+        return [d[0] for d in cur]
+    
 
     def train(self, item, cat):
         features = self.getFeatures(item)
@@ -74,6 +125,8 @@ class Classifier:
             self.incf(f, cat)
         # 增加该分类的计数
         self.incc(cat)
+
+        self.con.commit()
 
     def fprob(self, f, cat):
         if self.catcount(cat) == 0:
