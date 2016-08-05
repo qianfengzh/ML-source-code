@@ -60,6 +60,17 @@ def uniqueCounts(rows):
         results[r] = results.get(r, 0) + 1
     return results
 
+def results(rows):
+    # 概率形式输出结果
+    labelProb = {}
+    for row in rows:
+        labelProb.setdefault(row[-1],[0,0])
+        labelProb[row[-1]][0] += 1
+    for key in labelProb.keys():
+        labelProb[key][1] = float(labelProb[key][0])/len(rows)
+    return labelProb
+
+
 # Gini Impurity
 # 基尼不纯度：Gini = p*(1-p)-->二分类时（产生二叉树）
 # 当为多叉树时，下面函数使用，体现了普适性
@@ -75,6 +86,8 @@ def giniImpurity(rows):
             p2 = float(counts[k2])/total
             imp += p1 * p2
     return imp
+
+
         
  # Information Entropy
 def entropy(rows):
@@ -90,13 +103,13 @@ def entropy(rows):
 
 
 # 递归构建树
-def buildTree(rows, scoref=entropy):
+def buildTree(rows, scoref=entropy, mingain=0.0):
     if len(rows) == 0:
         return DecisionNode()
     current_score = scoref(rows)
 
     # 定义一些变量以记录最佳拆分条件
-    best_gain = 0.0
+    best_gain = mingain
     best_criteria = None
     best_sets = None
 
@@ -112,19 +125,21 @@ def buildTree(rows, scoref=entropy):
             # 信息增益
             p = float(len(set1))/len(rows)
             gain = current_score - p*scoref(set1) - (1-p)*scoref(set2)
+
             if gain > best_gain and len(set1) > 0 and len(set2) > 0:
                 best_gain = gain
                 best_criteria = (col, value)
                 best_sets = (set1, set2)
 
     # 创建分支
-    if best_gain > 0:
-        trueBranch = buildTree(best_sets[0])
-        falseBranch = buildTree(best_sets[1])
+    print best_gain
+    if best_gain > mingain:
+        trueBranch = buildTree(best_sets[0],mingain=mingain)
+        falseBranch = buildTree(best_sets[1],mingain=mingain)
         return DecisionNode(col=best_criteria[0], value=best_criteria[1],
             tb=trueBranch, fb=falseBranch)
     else:
-        return DecisionNode(results=uniqueCounts(rows))
+        return DecisionNode(results=results(rows))
 
 
 def printTree(tree, indent=''):
@@ -143,7 +158,7 @@ def printTree(tree, indent=''):
 
 
 
-
+'''
 # ===================================================
 # 图形显示树
 def getWidth(tree):
@@ -191,5 +206,110 @@ def drawNode(draw, tree, x, y):
     else:
         txt = ' \n'.join(['%s:%d' % v for v in tree.results.items()])
         draw.text((x-20,y),txt,(0,0,0))
+'''
+
+# ============================
+def classify(observation, tree):
+    if tree.results != None:
+        return tree.results
+    else:
+        v = observation[tree.col]
+        if isinstance(v, int) or isinstance(v, float):
+            if v >= tree.value:
+                branch = tree.tb
+            else:
+                branch = tree.fb
+        else:
+            if v == tree.value:
+                branch = tree.tb
+            else:
+                branch = tree.fb
+    return classify(observation, branch)
+
+
+def mdclassify(observation, tree):
+    if tree.results != None:
+        return tree.results
+    else:
+        v = observation[tree.col]
+        if v == None:
+            # 二叉树两边都有，同时向下遍历
+            tr, fr = mdclassify(observation, tree.tb), mdclassify(observation,tree.fb)
+            # 做归一化，因为左右分支合并成为一个整体，对各分支计数进行加权
+            # 权重即为数据项位于各分支的比例
+            tcount = sum(tr.values())
+            fcount = sum(fr.values())
+            tw = float(tcount)/(tcount + fcount)
+            fw = float(fcount)/(tcount + fcount)
+            result = {}
+            for k, v in tr.items():
+                result[k] = v * tw
+            for k, v in fr.items():
+                result[k] = result.get(k,0) + v * fw
+                # result.setdefault(k,0)
+                # result[k] += v * fw
+            return result
+        else:
+            if isinstance(v, int) or isinstance(v,float):
+                if v >= tree.value:
+                    branch = tree.tb
+                else:
+                    branch = tree.fb
+            else:
+                if v == tree.value:
+                    branch = tree.tb
+                else:
+                    branch = tree.fb
+            return mdclassify(observation, branch)
+
+
+
+#===================================
+# 树剪枝
+def prune(tree, mingain):
+    # mingain is the entropy threshold.
+    # 如果不是叶节点，则进行递归剪枝操作
+    if tree.tb.results == None:
+        prune(tree.tb, mingain)
+    if tree.fb.results == None:
+        prune(tree.fb, mingain)
+
+    # 如果两个分支都是 leaf_node,判断是否需要合并
+    if tree.tb.results != None and tree.fb.results != None:
+        # 构造合并后的数据集
+        tb, fb = [],[]
+        for v, c in tree.tb.results.items():
+            tb += [[v]] * c[0]
+        for v, c in tree.fb.results.items():
+            fb += [[v]] * c[0]
+
+        # 检查熵的减少情况
+        delta = entropy(tb + fb) - (entropy(tb) + entropy(fb)/2)
+        if delta < mingain:
+            # 合并分支
+            tree.tb, tree.fb = None, None
+            tree.results = results(tb+fb)
+
+
+# ==========================
+# 回归树--处理连续型label
+def variance(rows):
+    if len(rows) == 0:
+        return 0
+    data = [float(row[len(row)-1]) for row in rows]
+    # 如果使用numpy 数组，可采用 flat OR flatten
+    mean = sum(data)/len(data)
+    variance = sum([(d - mean)**2 for d in data])/len(data)
+    # E(x**2)-(E(x))**2
+    # mean2 = sum([d**2 for d in data])/len(data)
+    # mean = sum(data)/len(data)
+    # variance = mean2 - mean
+    return variance
+
+# 对住房价格进行建模
+
+
+
+
 
 
