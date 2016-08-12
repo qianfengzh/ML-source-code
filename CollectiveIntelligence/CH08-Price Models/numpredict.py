@@ -54,7 +54,7 @@ def getdistance(data, vec1):
 	distancelist = []
 	for i in range(len(data)):
 		vec2 = data[i]['input']
-		distancelist.append(euclidian(vec1, vec2))
+		distancelist.append((euclidian(vec1, vec2),i))
 	distancelist.sort()
 	return distancelist
 
@@ -62,10 +62,47 @@ def knnestimate(data, vec1, k=5):
 	# 得到排序过后的距离列表
 	dlist = getdistance(data, vec1)
 
+	avg = 0.0
 	# 对前 k 项结果求平均
-	return sum(dlist[-k:])/float(k)
+	for i in range(k):
+		idx = dlist[i][1]
+		avg += data[idx]['result']
+	return avg/k
+
 
 # 使用反函数为近邻分配权重(缺点：衰减过快)
 def inverseweight(dist, num=1.0, const=0.1):
 	return num/(dist+const)
+
+# 使用减法函数计算权重(解决反函数对近邻分配权重过大问题；缺点：权重会跌至0)
+# 无法找到距离足够近的项
+def subtraceweight(dist, const=1.0):
+	if dist > const:
+		return 0
+	else:
+		return const-dist
+
+# 高斯函数（钟形曲线）
+def gaussian(dist, sigma=1.0):
+	return math.exp(-dist**2/(2*sigma**2))
+
+
+def weightedknn(data, vec1, k=5, weightf=gaussian):
+	# 得到距离
+	dlist = getdistance(data, vec1)
+	avg = 0.0
+	totalweight = 0.0
+
+	# 得到加权平均值
+	for i in range(k):
+		dist = dlist[i][0]
+		idx = dlist[i][1]
+		weight = weightf(dist)
+		avg += weight * data[idx]['result']
+		totalweight += weight
+	avg /= totalweight
+	return avg
+
+
+
 
