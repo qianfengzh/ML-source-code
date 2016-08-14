@@ -9,6 +9,7 @@
 
 from random import random,randint
 import math
+from pylab import *
 
 def wineprice(rating, age):
 	peak_age = rating-50
@@ -102,6 +103,112 @@ def weightedknn(data, vec1, k=5, weightf=gaussian):
 		totalweight += weight
 	avg /= totalweight
 	return avg
+
+
+def dividedata(data, test=0.05):
+	trainset = []
+	testset = []
+	for row in data:
+		if random()<test:
+			testset.append(row)
+		else:
+			trainset.append(row)
+	return trainset, testset
+
+
+def testalgorithm(algf, trainset, testset):
+	# 衡量均方误差
+	error = 0.0
+	for row in testset:
+		guess = algf(train, row['input'])
+		error += (row['result']-guess)**2
+	return error/len(testset)
+
+def crossvalidate(algf, data, trials=100, test=0.05):
+	error = 0.0
+	for i in range(trials):
+		trainset, testset = dividedata(data, test)
+		error += testalgorithm(algf, trainset, testset)
+	return error/trials
+
+
+
+#==========================================
+# 算法的改进（在不同类型的特征变量上的应用）
+
+def wineset2():
+	rows = []
+	for i in range(300):
+		rating = random()*50 + 50
+		age = random() * 50
+		aisle = float(randint(1,20))
+		bottlesize = [375.0, 750.0, 1500.0, 3000.0][randint(0,3)]
+		price = wineprice(rating, age)
+		price *= (bottlesize/750)
+		price *= (random()*0.9+0.2)
+		rows.append({'input':(rating,age,aisle,bottlesize),
+			'result':price})
+	return rows
+
+
+def rescale(data, scale):
+	scaleddata = []
+	for row in data:
+		scaled = [scale[i] * row['input'][i] for i in range(len(scale))]
+		scaleddata.append({'input':scaled, 'result':row['result']})
+	return scaleddata
+
+
+
+# 将交叉验证封装成一个损失函数，再将此函数用作优化问题进行求解。此处函数调用将返回一个函数（类似闭包）
+def createcostfunction(algf, data):
+	def costf(scale):
+		sdata = rescale(data, scale)
+		return crossvalidate(algf, sdata, trials=10)
+	return costf
+
+weightdomain = [(0,20)] * 4
+
+
+def wineset3():
+	rows = wineset1()
+	for row in rows:
+		if random()<0.5:
+			# 葡萄酒是从折扣店购得
+			row['result'] *= 0.5
+	return rows
+
+
+# 不对称分布问题的处理
+def probguess(data, vec1, low, high, k=5, weightf=gaussian):
+	dlist = getdistance(data, vec1)
+	nweight = 0.0
+	tweight = 0.0
+
+	for i in range(k):
+		dist = dlist[i][0]
+		idx = dlist[i][1]
+		weight = weightf(dist)
+		v = data[idx]['result']
+
+		# 当前数据点位于指定范围吗？
+		if v>= low and v<=high:
+			nweight += weight
+		tweight += weight
+	if tweight == 0:
+		return 0
+
+	# 概率等于位于指定范围内的权重值初一所有权重值
+	return nweight/tweight
+
+
+
+
+
+
+
+
+
 
 
 
