@@ -30,7 +30,7 @@ public class BloomFilterClient
 		float falsePosRate = Float.parseFloat(args[2]);
 		Path bfFile = new Path(args[3]);
 		
-		// 计算向量大小并基于概率优化 k 值
+		// 获取最优化向量大小和最优化散列函数数目
 		int vectorSize = getOptimalBloomFilterSize(numMembers, falsePosRate);
 		int nbHash = getOptimalK(numMembers, vectorSize);
 		
