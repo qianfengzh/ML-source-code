@@ -69,7 +69,7 @@ public class HierarchyClient
 		job.setReducerClass(UserJoinReducer.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
 		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(Text.class);
+		job.setOutputValueClass(NullWritable.class);
 		TextOutputFormat.setOutputPath(job, new Path(args[2]));
 		
 		System.exit(job.waitForCompletion(true) ? 0 : 2);
@@ -127,7 +127,6 @@ public class HierarchyClient
 				Context context)
 				throws IOException, InterruptedException
 		{
-			post = null;
 			comments.clear();
 			
 			for (Text t : values)
@@ -143,7 +142,7 @@ public class HierarchyClient
 			}
 			
 			
-			if (null == post)
+			if (null != post)
 			{
 				String postWithComentChildren = null;
 				try
