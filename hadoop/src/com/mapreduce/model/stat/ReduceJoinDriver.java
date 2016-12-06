@@ -1,6 +1,10 @@
 package com.mapreduce.model.stat;
 
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -10,10 +14,13 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.util.bloom.BloomFilter;
+import org.apache.hadoop.util.bloom.Key;
 
 // 给定一个用户信息几何和一个用户评论列表，通过为每一条评论添加创建
 // 该评论的用户信息来丰富评论的内容。
@@ -59,6 +66,73 @@ public class ReduceJoinDriver
 			context.write(outkey, outvalue);
 		}
 	}
+	
+	
+	
+	/*
+	 * @name add the BloomFilter
+	 */
+	
+	public static class BloomUserJoinMapper extends Mapper<Object, Text, Text, Text>
+	{
+		private Text outkey = new Text();
+		private Text outvalue = new Text();
+		
+		@Override
+		protected void map(Object key, Text value,
+				Context context)
+				throws IOException, InterruptedException
+		{
+			Map<String, String> parsed = MRDPUtils.transformXmlToMap(value.toString());
+			
+			if (Integer.parseInt(parsed.get("Reputation")) > 1500)
+			{
+				outkey.set(parsed.get("Id"));
+				outvalue.set("A" + value.toString());
+				context.write(outkey, outvalue);
+			}
+		}
+	}
+	
+	public static class BloomCommentJoinMapper extends Mapper<Object, Text, Text, Text>
+	{
+		private BloomFilter bfilter = new BloomFilter();
+		private Text outkey = new Text();
+		private Text outvalue = new Text();
+		
+		@Override
+		protected void setup(Context context)
+				throws IOException, InterruptedException
+		{
+			Path[] files = DistributedCache.getLocalCacheFiles(context.getConfiguration());
+			//URI[] uris = context.getCacheFiles();
+			
+			DataInputStream strm = new DataInputStream(new FileInputStream(new File(files[0].toString())));
+			bfilter.readFields(strm);
+		}
+		
+		@Override
+		protected void map(Object key, Text value,
+				Context context)
+				throws IOException, InterruptedException
+		{
+			Map<String, String> parsed = MRDPUtils.transformXmlToMap(value.toString());
+			
+			String userId = parsed.get("UserId");
+			if (bfilter.membershipTest(new Key(userId.getBytes())))
+			{
+				outkey.set(userId);
+				outvalue.set("B" + value.toString());
+				context.write(outkey, outvalue);
+			}
+		}
+		
+	}
+
+	
+	
+	
+	
 	
 	
 	public static class UserJoinReducer extends Reducer<Text, Text, Text, Text>
