@@ -12,7 +12,9 @@ import org.apache.hadoop.mapreduce.Reducer;
 // 当生成输出时，从一个独立的数据集中获得每个用户的声望及丰富用户信息。
 
 
-
+/*
+ * @name 统计用户数和帖子总数
+ */
 public class JobChainClient0
 {
 	public static class UserIdCountMapper extends Mapper<Object, Text, Text, LongWritable>

@@ -58,11 +58,22 @@ public class JobChainClient1
 					Map<String, String> parsed = MRDPUtils.transformXmlToMap(line);
 					userIdToReputation.put(parsed.get("id"), parsed.get("Reputation"));
 				}
-					
-			}
+				rdr.close();
+			}	
+		}
+		
+		@Override
+		protected void map(Object key, Text value,
+				Context context)
+				throws IOException, InterruptedException
+		{
+			String[] tokens = value.toString().split("\t");
 			
+			String userId = tokens[0];
+			int posts = Integer.parseInt(tokens[1]);
 			
-			
+			outkey.set(userId);
+			outvalue.set((long) posts + "\t" + userIdToReputation.get(userId));
 			
 			
 			
@@ -71,6 +82,11 @@ public class JobChainClient1
 			
 			
 		}
+		
+	
+	
+	
+	
 	}
 	
 	
