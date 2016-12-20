@@ -1,101 +1,69 @@
 package com.mapreduce.model.stat;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.filecache.DistributedCache;
-import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
+
+// 并行作业链，通过一个reduce求均值
+
+// 问题：给定JobChainClient0中已经分好箱的用户，并行执行作业计算每个箱中用户的平均声望
 
 public class JobChainClient1
 {
-	public static class UserIdBinningMapper extends Mapper<Object, Text, Text, Text>
+	public static class AverageReputationMapper extends Mapper<LongWritable, Text, Text, DoubleWritable>
 	{
-		public static final String AVERAGE_POSTS_PER_USER = "avg.posts.per.user";
-		
-		public static void setAveragePostsPerUser(Job job, double avg)
-		{
-			job.getConfiguration().set(AVERAGE_POSTS_PER_USER, Double.toString(avg));
-		}
-		
-		public static double getAveragePostsPerUser(Configuration conf)
-		{
-			return Double.parseDouble(conf.get(AVERAGE_POSTS_PER_USER));
-		}
-		
-		
-		private double average = 0.0;
-		private MultipleOutputs<Text, Text> mos = null;
-		private Text outkey = new Text(), outvalue = new Text();
-		private HashMap<String, String> userIdToReputation = new HashMap<String, String>();
+		private static final Text GROUP_ALL_KEY = new Text("Average Reputation:");
+		private DoubleWritable outvalue = new DoubleWritable();
 		
 		@Override
-		protected void setup(Context context)
-				throws IOException, InterruptedException
-		{
-			average = getAveragePostsPerUser(context.getConfiguration());
-			
-			mos = new MultipleOutputs<Text, Text>(context);
-			Path[] files = DistributedCache.getLocalCacheFiles(context.getConfiguration());
-			
-			for (Path p : files)
-			{
-				BufferedReader rdr = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(new File(p.toString())))));
-				
-				String line;
-				while ((line = rdr.readLine()) != null)
-				{
-					Map<String, String> parsed = MRDPUtils.transformXmlToMap(line);
-					userIdToReputation.put(parsed.get("id"), parsed.get("Reputation"));
-				}
-				rdr.close();
-			}	
-		}
-		
-		@Override
-		protected void map(Object key, Text value,
+		protected void map(LongWritable key, Text value,
 				Context context)
 				throws IOException, InterruptedException
 		{
+			// split the line into tokens
 			String[] tokens = value.toString().split("\t");
 			
-			String userId = tokens[0];
-			int posts = Integer.parseInt(tokens[1]);
+			// get the reputation from the third column
+			double reputation = Double.parseDouble(tokens[2]);
 			
-			outkey.set(userId);
-			outvalue.set((long) posts + "\t" + userIdToReputation.get(userId));
+			// set the output value and write to context
+			outvalue.set(reputation);
 			
-			
-			
-			
-			
-			
-			
+			context.write(GROUP_ALL_KEY, outvalue);
 		}
-		
-	
-	
-	
-	
 	}
 	
-	
-	
-	
-	
-	
-	
-	
+	public static class AverageReputationReducer extends Reducer<Text, DoubleWritable, Text, DoubleWritable>
+	{
+		private DoubleWritable outvalue = new DoubleWritable();
+		
+		@Override
+		protected void reduce(Text key, Iterable<DoubleWritable> values,
+				Context context)
+				throws IOException, InterruptedException
+		{
+			double sum = 0.0;
+			double count = 0;
+			for (DoubleWritable dw : values)
+			{
+				sum += dw.get();
+				++count;
+			}
+			
+			outvalue.set(sum/count);
+			context.write(key, outvalue);
+		}
+	}
 	
 	
 	
@@ -103,11 +71,69 @@ public class JobChainClient1
 
 	/**
 	 * @param args
+	 * @throws InterruptedException 
+	 * @throws IOException 
 	 */
-	public static void main(String[] args)
+	public static void main(String[] args) throws Exception
 	{
-		// TODO Auto-generated method stub
+		Configuration conf = new Configuration();
+		
+		Path belowAvgInputDir = new Path(args[0]);
+		Path aboveAvgInputDir = new Path(args[1]);
+		
+		Path belowAveOutputDir = new Path(args[2]);
+		Path aboveAvgOutputDir = new Path(args[3]);
+		
+		Job belowAvgJob = submitJob(conf, belowAvgInputDir, belowAveOutputDir);
+		Job aboveAvgJob = submitJob(conf, aboveAvgInputDir, aboveAvgOutputDir);
+		
+		// 两个Job都没有完成时，驱动程序休眠
+		while (!belowAvgJob.isComplete() || !aboveAvgJob.isComplete())
+		{
+			Thread.sleep(5000);
+		}
+		
+		if (belowAvgJob.isSuccessful())
+		{
+			System.out.println("Below Job completed successfully!");
+		}
+		else
+		{
+			System.out.println("Below Job failed");
+		}
+		
+		if (aboveAvgJob.isSuccessful())
+		{
+			System.out.println("Above Job completed successfully!");
+		}
+		else
+		{
+			System.out.println("Above Job failed");
+		}
+	}
 
+
+	private static Job submitJob(Configuration conf, Path inputDir,
+			Path outputDir) throws Exception
+	{
+		Job job = Job.getInstance(conf, "ParallelJobs");
+		job.setJarByClass(JobChainClient1.class);
+		
+		job.setMapperClass(AverageReputationMapper.class);
+		job.setReducerClass(AverageReputationReducer.class);
+		
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(DoubleWritable.class);
+		
+		job.setInputFormatClass(TextInputFormat.class);
+		TextInputFormat.addInputPath(job, inputDir);
+		
+		job.setOutputFormatClass(TextOutputFormat.class);
+		TextOutputFormat.setOutputPath(job, outputDir);
+		
+		// 提交作业
+		job.submit();
+		return job;
 	}
 
 }
